@@ -10,7 +10,9 @@ args = parser.parse_args()
 # Get configuration mode from environment or default to development
 config_name = os.environ.get('FLASK_ENV', 'development')
 app = create_app(config_name)
-application = app  # This is for WSGI servers
+
+# Export the application for WSGI servers
+application = app
 
 if __name__ == '__main__':
     debug = config_name == 'development'
