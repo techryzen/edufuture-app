@@ -6,13 +6,13 @@ load_dotenv()
 
 # Set environment variables
 os.environ["FLASK_ENV"] = "production"
-os.environ["MONGO_URI"] = "mongodb+srv://rishab0909:1234@cluster0.7icfipp.mongodb.net/edufuture?retryWrites=true&w=majority&appName=Cluster0"
+os.environ["MONGODB_URI"] = "mongodb+srv://rishab0909:1234@cluster0.7icfipp.mongodb.net/edufuture?retryWrites=true&w=majority&appName=Cluster0"
 os.environ["SECRET_KEY"] = "your-secure-secret-key"
 # Add any other environment variables you need
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'education_consultancy_secret_key')
-    MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://rishab0909:1234@cluster0.7icfipp.mongodb.net/edufuture?retryWrites=true&w=majority&appName=Cluster0')
+    MONGO_URI = os.environ.get('MONGODB_URI', 'mongodb+srv://rishab0909:1234@cluster0.7icfipp.mongodb.net/edufuture?retryWrites=true&w=majority&appName=Cluster0')
     UPLOAD_FOLDER = os.path.join('static', 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload
     
