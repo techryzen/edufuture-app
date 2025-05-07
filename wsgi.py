@@ -12,6 +12,9 @@ from app import create_app
 # Create the application instance
 application = create_app('production')
 
+# Also export as 'app' for compatibility with different WSGI servers
+app = application
+
 # For local development
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))

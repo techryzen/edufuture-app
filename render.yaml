@@ -5,13 +5,12 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       pip install gunicorn
-      chmod +x start.sh
-    startCommand: ./start.sh
+    startCommand: gunicorn main:app --bind 0.0.0.0:$PORT
     envVars:
       - key: FLASK_ENV
         value: production
       - key: FLASK_APP
-        value: app.py
+        value: main.py
       - key: MONGODB_URI
         value: mongodb+srv://rishab0909:1234@cluster0.7icfipp.mongodb.net/edufuture?retryWrites=true&w=majority&appName=Cluster0
       - key: PYTHONUNBUFFERED
