@@ -10,8 +10,6 @@ args = parser.parse_args()
 # Get configuration mode from environment or default to development
 config_name = os.environ.get('FLASK_ENV', 'development')
 app = create_app(config_name)
-
-# Expose the app variable for Gunicorn
 application = app
 
 if __name__ == '__main__':
