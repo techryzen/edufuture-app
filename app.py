@@ -11,6 +11,9 @@ args = parser.parse_args()
 config_name = os.environ.get('FLASK_ENV', 'development')
 app = create_app(config_name)
 
+# Expose the app variable for Gunicorn
+application = app
+
 if __name__ == '__main__':
     debug = config_name == 'development'
     port = int(os.environ.get('PORT', args.port))
