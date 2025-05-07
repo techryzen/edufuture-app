@@ -8,7 +8,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import json
 import random
 from app import mongo
-from app.utils import save_picture as save_image
+from app.utils import save_picture
+from app.models.user import User
+from app.models.blog import BlogPost
+from app.models.notification import Notification
+from app.forms.blog_forms import BlogPostForm
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -135,7 +139,7 @@ def add_user():
         # Handle profile image
         profile_image = 'default_profile.jpg'
         if 'profile_image' in request.files and request.files['profile_image'].filename:
-            profile_image = save_image(request.files['profile_image'], 'profile_pics')
+            profile_image = save_picture(request.files['profile_image'], 'profile_pics')
             
         # Create user
         user_data = {
@@ -195,7 +199,7 @@ def edit_user(user_id):
         
         # Handle profile image
         if 'profile_image' in request.files and request.files['profile_image'].filename:
-            update_data['profile_image'] = save_image(request.files['profile_image'], 'profile_pics')
+            update_data['profile_image'] = save_picture(request.files['profile_image'], 'profile_pics')
         
         # Update user
         mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_data})
@@ -482,7 +486,7 @@ def settings_profile():
         
         # Handle profile image
         if 'profile_image' in request.files and request.files['profile_image'].filename:
-            update_data['profile_image'] = save_image(request.files['profile_image'], 'profile_pics')
+            update_data['profile_image'] = save_picture(request.files['profile_image'], 'profile_pics')
         
         # Update user
         mongo.db.users.update_one({'_id': ObjectId(current_user.get_id())}, {'$set': update_data})
@@ -686,7 +690,7 @@ def upload_media():
     
     if file:
         file_type = request.form.get('type', 'blog')
-        filename = save_image(file, file_type)
+        filename = save_picture(file, file_type)
         
         return jsonify({
             'success': True, 
@@ -754,7 +758,7 @@ def create_blog():
         if 'featured_image' in request.files:
             file = request.files['featured_image']
             if file.filename != '':
-                featured_image = save_image(file, 'blog')
+                featured_image = save_picture(file, 'blog')
         
         # Create blog post
         post = {
@@ -808,7 +812,7 @@ def edit_blog(post_id):
         if 'featured_image' in request.files:
             file = request.files['featured_image']
             if file.filename != '':
-                featured_image = save_image(file, 'blog')
+                featured_image = save_picture(file, 'blog')
         
         # Handle image removal
         if request.form.get('remove_image') == 'true':
