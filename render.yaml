@@ -13,4 +13,9 @@ services:
         value: mongodb+srv://rishab0909:1234@cluster0.7icfipp.mongodb.net/edufuture?retryWrites=true&w=majority&appName=Cluster0
     healthCheckPath: /
     autoDeploy: true
-    plan: free 
+    plan: free
+    numInstances: 1
+    disk:
+      name: tmp
+      mountPath: /tmp
+      sizeGB: 1 
