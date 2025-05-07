@@ -2,8 +2,10 @@ services:
   - type: web
     name: edufuture-app
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:application
+    buildCommand: |
+      pip install -r requirements.txt
+      pip install gunicorn
+    startCommand: gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2
     envVars:
       - key: FLASK_ENV
         value: production
@@ -11,6 +13,8 @@ services:
         value: app.py
       - key: MONGODB_URI
         value: mongodb+srv://rishab0909:1234@cluster0.7icfipp.mongodb.net/edufuture?retryWrites=true&w=majority&appName=Cluster0
+      - key: PYTHONUNBUFFERED
+        value: "1"
     healthCheckPath: /
     autoDeploy: true
     plan: free

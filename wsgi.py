@@ -6,10 +6,12 @@ path = os.path.dirname(os.path.abspath(__file__))
 if path not in sys.path:
     sys.path.append(path)
 
-# Set environment variables
-os.environ['FLASK_APP'] = 'app.py'
-os.environ['FLASK_ENV'] = 'production'
-
 # Import your Flask app
 from app import create_app
-application = create_app('production') 
+
+# Create the application instance
+application = create_app('production')
+
+# For local development
+if __name__ == '__main__':
+    application.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080))) 
