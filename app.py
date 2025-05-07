@@ -13,4 +13,5 @@ app = create_app(config_name)
 
 if __name__ == '__main__':
     debug = config_name == 'development'
-    app.run(host='0.0.0.0', port=args.port, debug=debug) 
+    port = int(os.environ.get('PORT', args.port))
+    app.run(host='0.0.0.0', port=port, debug=debug) 
