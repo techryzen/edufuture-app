@@ -1,6 +1,43 @@
 from datetime import datetime
 from bson.objectid import ObjectId
 
+class BlogPost:
+    def __init__(self, post_data):
+        self._id = post_data.get('_id')
+        self.title = post_data.get('title')
+        self.content = post_data.get('content')
+        self.author_id = post_data.get('author_id')
+        self.image = post_data.get('image')
+        self.tags = post_data.get('tags', [])
+        self.status = post_data.get('status', 'published')
+        self.created_at = post_data.get('created_at')
+        self.updated_at = post_data.get('updated_at')
+        self.views = post_data.get('views', 0)
+        self.likes = post_data.get('likes', 0)
+        self.comments = post_data.get('comments', [])
+        self.liked_by = post_data.get('liked_by', [])
+
+    @property
+    def id(self):
+        return str(self._id)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'content': self.content,
+            'author_id': str(self.author_id),
+            'image': self.image,
+            'tags': self.tags,
+            'status': self.status,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+            'views': self.views,
+            'likes': self.likes,
+            'comments': self.comments,
+            'liked_by': [str(user_id) for user_id in self.liked_by]
+        }
+
 class Blog:
     @staticmethod
     def create_post(mongo, title, content, author_id, image_filename=None, tags=None, status='published'):
@@ -25,7 +62,8 @@ class Blog:
     @staticmethod
     def get_post(mongo, post_id):
         """Get a blog post by ID"""
-        return mongo.db.blog_posts.find_one({'_id': ObjectId(post_id)})
+        post_data = mongo.db.blog_posts.find_one({'_id': ObjectId(post_id)})
+        return BlogPost(post_data) if post_data else None
     
     @staticmethod
     def get_all_posts(mongo, status='published', limit=None, skip=0, sort_by='created_at', sort_order=-1):
@@ -36,7 +74,7 @@ class Blog:
         if limit:
             cursor = cursor.limit(limit)
             
-        return list(cursor)
+        return [BlogPost(post_data) for post_data in cursor]
     
     @staticmethod
     def get_posts_by_author(mongo, author_id, status=None, limit=None):
@@ -51,7 +89,7 @@ class Blog:
         if limit:
             cursor = cursor.limit(limit)
             
-        return list(cursor)
+        return [BlogPost(post_data) for post_data in cursor]
     
     @staticmethod
     def update_post(mongo, post_id, title, content, image_filename=None, tags=None, status='published'):
