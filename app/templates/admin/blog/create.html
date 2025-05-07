@@ -1,0 +1,266 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}{{ 'Edit' if post else 'Create' }} Blog Post{% endblock %}
+{% block page_title %}{{ 'Edit' if post else 'Create' }} Blog Post{% endblock %}
+
+{% block styles %}
+<!-- CKEditor styles -->
+<style>
+    .ck-editor__editable {
+        min-height: 300px;
+        max-height: 600px;
+    }
+    
+    .image-preview {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: none;
+    }
+    
+    .current-image-container {
+        position: relative;
+    }
+    
+    .remove-image-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .remove-image-btn:hover {
+        background: rgba(255, 255, 255, 0.9);
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-9">
+        <div class="card mb-4">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">{{ 'Edit' if post else 'Create' }} Post</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin.edit_blog', post_id=post._id) if post else url_for('admin.create_blog') }}" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ post.title if post else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text" class="form-control" id="slug" name="slug" value="{{ post.slug if post else '' }}">
+                        <div class="form-text">URL-friendly version of the title. Leave blank to auto-generate.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content</label>
+                        <textarea id="content" name="content">{{ post.content if post else '' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category._id }}" {% if post and post.category == category._id %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="tags" name="tags" value="{{ post.tags|join(', ') if post and post.tags else '' }}">
+                                <div class="form-text">Separate tags with commas</div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3">
+        <div class="card mb-4">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">Publishing</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="published">
+                        <option value="true" {% if post and post.published %}selected{% endif %}>Published</option>
+                        <option value="false" {% if post and not post.published %}selected{% endif %}>Draft</option>
+                    </select>
+                </div>
+                
+                {% if post %}
+                <div class="mb-3">
+                    <label class="form-label">Created</label>
+                    <div class="form-control bg-light">{% if post.created_at and post.created_at is not string %}{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}N/A{% endif %}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Last Updated</label>
+                    <div class="form-control bg-light">{% if post.updated_at and post.updated_at is not string %}{{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}{% else %}N/A{% endif %}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Views</label>
+                    <div class="form-control bg-light">{{ post.views }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Author</label>
+                    <div class="form-control bg-light">{{ post.author_info.username }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        {{ 'Save Changes' if post else 'Publish Post' }}
+                    </button>
+                </div>
+                
+                {% if post %}
+                <div class="mt-2">
+                    <a href="{{ url_for('blog.blog_detail', post_id=post._id) }}" class="btn btn-outline-secondary w-100" target="_blank">
+                        View Post
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">Featured Image</h5>
+            </div>
+            <div class="card-body">
+                {% if post and post.featured_image %}
+                <div class="current-image-container mb-3">
+                    <img src="{{ url_for('static', filename='uploads/blog/' + post.featured_image) }}" alt="Featured image" class="img-fluid rounded">
+                    <div class="remove-image-btn" id="removeImageBtn">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <input type="hidden" name="remove_image" id="removeImage" value="false">
+                </div>
+                {% endif %}
+                
+                <img id="imagePreview" class="image-preview" alt="Preview">
+                
+                <div class="mb-3">
+                    <label for="featured_image" class="form-label">{{ 'Change' if post and post.featured_image else 'Upload' }} Featured Image</label>
+                    <input type="file" class="form-control" id="featured_image" name="featured_image" accept="image/*">
+                </div>
+                
+                <div class="form-text">
+                    Recommended size: 1200x800 pixels
+                </div>
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="featured" name="featured" {% if post and post.featured %}checked{% endif %}>
+                    <label class="form-check-label" for="featured">
+                        Featured Post
+                    </label>
+                    <div class="form-text">Featured posts will be displayed prominently on the blog homepage.</div>
+                </div>
+            </div>
+        </div>
+                    
+        <div class="mb-4">
+            <a href="{{ url_for('admin.blog_list') }}" class="btn btn-outline-secondary w-100">
+                <i class="fas fa-arrow-left me-1"></i> Back to Blog List
+            </a>
+        </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.ckeditor.com/ckeditor5/34.2.0/classic/ckeditor.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize CKEditor
+        ClassicEditor
+            .create(document.querySelector('#content'), {
+                toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'outdent', 'indent', '|', 'imageUpload', 'blockQuote', 'insertTable', 'undo', 'redo']
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        
+        // Auto-generate slug from title
+        const titleInput = document.getElementById('title');
+        const slugInput = document.getElementById('slug');
+        
+        if (titleInput && slugInput) {
+            titleInput.addEventListener('input', function() {
+                if (!slugInput.value || slugInput.dataset.autoGenerated === 'true') {
+                    slugInput.value = this.value
+                        .toLowerCase()
+                        .replace(/[^\w\s-]/g, '')
+                        .replace(/\s+/g, '-');
+                    slugInput.dataset.autoGenerated = 'true';
+                }
+            });
+            
+            slugInput.addEventListener('input', function() {
+                this.dataset.autoGenerated = 'false';
+            });
+        }
+        
+        // Image preview
+        const imageInput = document.getElementById('featured_image');
+        const imagePreview = document.getElementById('imagePreview');
+        
+        if (imageInput && imagePreview) {
+            imageInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    }
+                    
+                    reader.readAsDataURL(this.files[0]);
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+            });
+        }
+        
+        // Remove image
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        const removeImageInput = document.getElementById('removeImage');
+        
+        if (removeImageBtn && removeImageInput) {
+            removeImageBtn.addEventListener('click', function() {
+                const imageContainer = this.parentElement;
+                imageContainer.style.display = 'none';
+                removeImageInput.value = 'true';
+            });
+        }
+    });
+</script>
+{% endblock %} 

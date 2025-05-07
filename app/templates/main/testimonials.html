@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="pt-32 pb-16 bg-gradient-to-b from-blue-50 to-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Testimonials</h1>
+            <p class="text-gray-600 max-w-3xl mx-auto text-lg">
+                Hear what our students and clients have to say about their experience with EduFuture.
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center text-xl font-bold mr-4">
+                        JS
+                    </div>
+                    <div>
+                        <h3 class="font-bold">John Smith</h3>
+                        <p class="text-sm text-gray-500">University of Cambridge</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 italic">
+                    "EduFuture played a crucial role in my successful application to Cambridge. Their guidance throughout the process was invaluable, and I couldn't have done it without their support."
+                </p>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-14 h-14 rounded-full bg-accent text-white flex items-center justify-center text-xl font-bold mr-4">
+                        AD
+                    </div>
+                    <div>
+                        <h3 class="font-bold">Anna Davis</h3>
+                        <p class="text-sm text-gray-500">Stanford University</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 italic">
+                    "The personalized attention and expert advice I received from EduFuture helped me navigate the complex admission process to Stanford. I highly recommend their services!"
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

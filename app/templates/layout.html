@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EduFuture | Modern Education Consultancy{% endblock %}</title>
+    <meta name="description" content="Professional education consultancy services for students worldwide. Get expert guidance on admissions, career counseling, and more.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1E293B',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    
+    <!-- Additional CSS -->
+    {% block styles %}{% endblock %}
+</head>
+<body class="font-['Poppins']">
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 backdrop-blur-md bg-white/70 shadow-sm">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <a href="{{ url_for('main.home') }}" class="text-2xl font-bold bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">
+                    EduFuture
+                </a>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="{{ url_for('main.home') }}" class="font-medium hover:text-primary transition-colors {% if request.endpoint == 'main.home' %}active{% endif %}">Home</a>
+                    {# Use fragment identifiers for single-page scroll on homepage, otherwise use page links #}
+                    {% set about_url = url_for('main.home') + '#about' if request.endpoint == 'main.home' else url_for('main.about') %}
+                    <a href="{{ about_url }}" class="font-medium hover:text-primary transition-colors {% if request.endpoint == 'main.about' %}active{% endif %}">About</a>
+                    {% set services_url = url_for('main.home') + '#services' if request.endpoint == 'main.home' else url_for('main.services') %}
+                    <a href="{{ services_url }}" class="font-medium hover:text-primary transition-colors {% if request.endpoint == 'main.services' %}active{% endif %}">Services</a>
+                    {% set testimonials_url = url_for('main.home') + '#testimonials' if request.endpoint == 'main.home' else url_for('main.testimonials') %}
+                    <a href="{{ testimonials_url }}" class="font-medium hover:text-primary transition-colors {% if request.endpoint == 'main.testimonials' %}active{% endif %}">Testimonials</a>
+                    {# Always link directly to blog page #}
+                    <a href="{{ url_for('blog.blog_list') }}" class="font-medium hover:text-primary transition-colors {% if request.blueprint == 'blog' %}active{% endif %}">Blog</a>
+                    {% set contact_url = url_for('main.home') + '#contact' if request.endpoint == 'main.home' else url_for('main.contact') %}
+                    <a href="{{ contact_url }}" class="font-medium hover:text-primary transition-colors {% if request.endpoint == 'main.contact' %}active{% endif %}">Contact</a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-dark focus:outline-none" aria-label="Toggle menu" aria-expanded="false">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- User Actions / Get Started Button -->
+                <div class="hidden md:flex items-center space-x-4">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('blog.create_post') }}" class="bg-gradient-to-r from-secondary to-green-500 hover:opacity-90 text-white px-4 py-2 rounded-full transition-all shadow-md hover:shadow-lg text-sm">
+                           <i class="fas fa-pen-to-square mr-1"></i> New Post
+                        </a>
+                         <div class="relative group">
+                            <button class="flex items-center space-x-1 focus:outline-none" aria-label="User menu">
+                                {% if current_user.profile_image %}
+                                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + current_user.profile_image) }}" alt="{{ current_user.username }} profile picture" class="w-8 h-8 rounded-full border border-gray-300">
+                                {% else %}
+                                    <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold border border-gray-300">
+                                        {{ current_user.username[0].upper() }}
+                                    </div>
+                                {% endif %}
+                            </button>
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-[60] hidden group-hover:block ring-1 ring-black ring-opacity-5">
+                                <div class="px-4 py-2 border-b">
+                                    <span class="block text-sm font-semibold text-gray-900">{{ current_user.username }}</span>
+                                    {% if current_user.is_admin %} <span class="block text-xs text-accent">Administrator</span>{% endif %}
+                                </div>
+                                <div class="py-1">
+                                    <a href="{{ url_for('auth.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-user fa-fw mr-2 text-gray-400"></i> Profile
+                                    </a>
+                                    <a href="{{ url_for('blog.my_posts') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-blog fa-fw mr-2 text-gray-400"></i> My Posts
+                                    </a>
+                                    {% if current_user.is_admin %}
+                                        <a href="{{ url_for('auth.admin_dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-user-shield fa-fw mr-2 text-gray-400"></i> Admin
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                <div class="border-t border-gray-100"></div>
+                                <div class="py-1">
+                                     <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-sign-out-alt fa-fw mr-2 text-gray-400"></i> Logout
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                         <a href="{{ url_for('auth.login') }}" class="font-medium text-primary hover:text-blue-700 transition-colors px-4 {% if request.endpoint == 'auth.login' %}active{% endif %}">Login</a>
+                         <a href="{{ url_for('auth.register') }}" class="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white px-5 py-2 rounded-full transition-all shadow-md hover:shadow-lg text-sm {% if request.endpoint == 'auth.register' %}active{% endif %}">
+                            Register
+                        </a>
+                         {# Alternative: Original 'Get Started' button #}
+                         {# <a href="{{ contact_url }}" class="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white px-6 py-2 rounded-full transition-all shadow-lg hover:shadow-xl">
+                             Get Started
+                         </a> #}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="hidden md:hidden mt-4 bg-white rounded-lg shadow-lg p-4 absolute left-0 right-0 mx-4 z-40 ring-1 ring-black ring-opacity-5">
+                <div class="flex flex-col space-y-1">
+                    <a href="{{ url_for('main.home') }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'main.home' %}bg-blue-50 text-primary{% endif %}">Home</a>
+                    <a href="{{ about_url }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'main.about' %}bg-blue-50 text-primary{% endif %}">About</a>
+                    <a href="{{ services_url }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'main.services' %}bg-blue-50 text-primary{% endif %}">Services</a>
+                    <a href="{{ testimonials_url }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'main.testimonials' %}bg-blue-50 text-primary{% endif %}">Testimonials</a>
+                    <a href="{{ url_for('blog.blog_list') }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.blueprint == 'blog' %}bg-blue-50 text-primary{% endif %}">Blog</a>
+                    <a href="{{ contact_url }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'main.contact' %}bg-blue-50 text-primary{% endif %}">Contact</a>
+                    
+                    <div class="border-t border-gray-200 my-2"></div>
+                    
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.profile') }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'auth.profile' %}bg-blue-50 text-primary{% endif %}">
+                            <i class="fas fa-user fa-fw mr-2 text-gray-400"></i> Profile
+                        </a>
+                        <a href="{{ url_for('blog.my_posts') }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'blog.my_posts' %}bg-blue-50 text-primary{% endif %}">
+                            <i class="fas fa-blog fa-fw mr-2 text-gray-400"></i> My Posts
+                        </a>
+                        <a href="{{ url_for('blog.create_post') }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'blog.create_post' %}bg-blue-50 text-primary{% endif %}">
+                           <i class="fas fa-pen-to-square fa-fw mr-2 text-gray-400"></i> Write Post
+                        </a>
+                        {% if current_user.is_admin %}
+                            <a href="{{ url_for('auth.admin_dashboard') }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'auth.admin_dashboard' %}bg-blue-50 text-primary{% endif %}">
+                                <i class="fas fa-user-shield fa-fw mr-2 text-gray-400"></i> Admin
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('auth.logout') }}" class="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full text-center mt-2 block">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="font-medium hover:text-primary transition-colors block px-3 py-2 rounded-md {% if request.endpoint == 'auth.login' %}bg-blue-50 text-primary{% endif %}">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="bg-gradient-to-r from-primary to-accent text-white px-4 py-2 rounded-full text-center mt-2 block {% if request.endpoint == 'auth.register' %}ring-2 ring-offset-2 ring-accent{% endif %}">
+                            Register
+                        </a>
+                         {# Alternative: Original 'Get Started' button #}
+                         {# <a href="{{ contact_url }}" class="bg-gradient-to-r from-primary to-accent text-white px-4 py-2 rounded-full text-center mt-2 block">
+                            Get Started
+                        </a> #}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="fixed top-20 right-5 z-[100] w-80 space-y-3"> {# Increased z-index #}
+                {% for category, message in messages %}
+                    <div class="alert-message p-4 rounded-lg shadow-lg border {% if category == 'error' or category == 'danger' %}bg-red-100 text-red-800 border-red-300{% elif category == 'success' %}bg-green-100 text-green-800 border-green-300{% elif category == 'warning' %}bg-yellow-100 text-yellow-800 border-yellow-300{% else %}bg-blue-100 text-blue-800 border-blue-300{% endif %} opacity-100 transition-opacity duration-300">
+                        <div class="flex justify-between items-center">
+                            <p class="text-sm">{{ message }}</p>
+                            <button class="alert-close ml-2 focus:outline-none text-lg leading-none" aria-label="Close alert">&times;</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    {# Add padding-top equal to navbar height (approximate or calculated) #}
+    {# Calculate based on py-3 padding (0.75rem * 2 = 1.5rem) + line height. Let's use pt-16 for now (4rem / 64px) #}
+    <main class="pt-16"> 
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white mt-20"> {# Added top margin #}
+        <div class="container mx-auto px-4 py-16">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                {# Column 1: Brand & Social #}
+                <div>
+                    <h3 class="text-2xl font-bold mb-4 bg-gradient-to-r from-primary to-accent text-transparent bg-clip-text">EduFuture</h3>
+                    <p class="text-gray-400 mb-6 text-sm">Expert guidance for your educational journey. Unlock your potential with our premium consulting services.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors text-xl" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors text-xl" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors text-xl" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors text-xl" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                
+                {# Column 2: Quick Links #}
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('main.home') }}" class="text-gray-400 hover:text-primary transition-colors text-sm">Home</a></li>
+                        <li><a href="{{ about_url }}" class="text-gray-400 hover:text-primary transition-colors text-sm">About Us</a></li>
+                        <li><a href="{{ services_url }}" class="text-gray-400 hover:text-primary transition-colors text-sm">Services</a></li>
+                        <li><a href="{{ url_for('blog.blog_list') }}" class="text-gray-400 hover:text-primary transition-colors text-sm">Blog</a></li>
+                        <li><a href="{{ contact_url }}" class="text-gray-400 hover:text-primary transition-colors text-sm">Contact</a></li>
+                    </ul>
+                </div>
+                
+                {# Column 3: Services #}
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Our Services</h4>
+                    <ul class="space-y-2">
+                        <li><a href="{{ services_url }}#service-admission" class="text-gray-400 hover:text-primary transition-colors text-sm">University Admissions</a></li>
+                        <li><a href="{{ services_url }}#service-counseling" class="text-gray-400 hover:text-primary transition-colors text-sm">Career Counseling</a></li>
+                        <li><a href="{{ services_url }}#service-testprep" class="text-gray-400 hover:text-primary transition-colors text-sm">Test Preparation</a></li>
+                        <li><a href="{{ services_url }}#service-visa" class="text-gray-400 hover:text-primary transition-colors text-sm">Visa Guidance</a></li>
+                        <li><a href="{{ services_url }}#service-scholarship" class="text-gray-400 hover:text-primary transition-colors text-sm">Scholarship Assistance</a></li>
+                    </ul>
+                </div>
+                
+                 {# Column 4: Contact Info #}
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Get in Touch</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt mt-1 mr-3 text-primary w-4 text-center flex-shrink-0"></i>
+                            <span class="text-gray-400">123 Education Street, Academic City, Country</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-phone mr-3 text-primary w-4 text-center flex-shrink-0"></i>
+                            <a href="tel:+11234567890" class="text-gray-400 hover:text-primary transition-colors">+1 (123) 456-7890</a>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-3 text-primary w-4 text-center flex-shrink-0"></i>
+                             <a href="mailto:info@edufuture.com" class="text-gray-400 hover:text-primary transition-colors">info@edufuture.com</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-12 pt-8 text-center text-gray-500 text-sm">
+                 <p>&copy; {{ now.year if now else '2024' }} EduFuture. All rights reserved. Designed with <i class="fas fa-heart text-red-500 px-1"></i>.</p>
+                 <div class="mt-2 space-x-4">
+                    <a href="#" class="hover:text-primary transition-colors">Privacy Policy</a>
+                    <span>&middot;</span>
+                    <a href="#" class="hover:text-primary transition-colors">Terms of Service</a>
+                 </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <a href="#" id="back-to-top" class="fixed bottom-5 right-5 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center opacity-0 invisible transition-all duration-300 z-50 hover:bg-blue-700" aria-label="Back to top">
+        <i class="fas fa-chevron-up"></i>
+    </a>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- AOS - Animate On Scroll Library -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    
+    <!-- Main JavaScript File -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Inline JS for Core Interactivity -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize AOS
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    duration: 800, // Slightly faster animation
+                    easing: 'ease-in-out-quad', // Smoother easing
+                    once: true,
+                    mirror: false
+                });
+            } else {
+                console.warn('AOS library not loaded.');
+            }
+            
+            // Mobile Menu Toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    const isExpanded = mobileMenu.classList.toggle('hidden');
+                    mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
+                    // Change icon based on state
+                    mobileMenuButton.querySelector('i').classList.toggle('fa-bars');
+                    mobileMenuButton.querySelector('i').classList.toggle('fa-times');
+                });
+                // Close mobile menu when a link is clicked
+                mobileMenu.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (!mobileMenu.classList.contains('hidden')) {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenuButton.setAttribute('aria-expanded', 'false');
+                            mobileMenuButton.querySelector('i').classList.add('fa-bars');
+                            mobileMenuButton.querySelector('i').classList.remove('fa-times');
+                        }
+                    });
+                });
+                 // Close mobile menu if clicking outside of it
+                document.addEventListener('click', function(event) {
+                    const isClickInsideMenu = mobileMenu.contains(event.target);
+                    const isClickOnButton = mobileMenuButton.contains(event.target);
+                    if (!isClickInsideMenu && !isClickOnButton && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenuButton.setAttribute('aria-expanded', 'false');
+                        mobileMenuButton.querySelector('i').classList.add('fa-bars');
+                        mobileMenuButton.querySelector('i').classList.remove('fa-times');
+                    }
+                });
+            } else {
+                console.warn('Mobile menu elements not found.');
+            }
+            
+            // Back to Top Button
+            const backToTop = document.getElementById('back-to-top');
+            if (backToTop) {
+                 const scrollHandler = () => {
+                    if (window.pageYOffset > 300) {
+                        backToTop.classList.remove('opacity-0', 'invisible');
+                        backToTop.classList.add('opacity-100', 'visible');
+                    } else {
+                        backToTop.classList.add('opacity-0', 'invisible');
+                        backToTop.classList.remove('opacity-100', 'visible');
+                    }
+                 };
+                 // Debounce scroll handler for performance
+                 let scrollTimeout;
+                 window.addEventListener('scroll', function() {
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(scrollHandler, 50); // Adjust delay as needed
+                 });
+                 // Initial check in case page loads already scrolled down
+                 scrollHandler(); 
+                
+                backToTop.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            } else {
+                console.warn('Back to top button not found.');
+            }
+            
+            // Alert messages handling
+            const alertMessages = document.querySelectorAll('.alert-message');
+            alertMessages.forEach((alert, index) => {
+                 const closeButton = alert.querySelector('.alert-close');
+                 const dismiss = () => {
+                    alert.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateX(100%)'; // Slide out animation
+                    // Remove after transition
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 350); // Match transition duration + buffer
+                 };
+
+                 if (closeButton) {
+                    closeButton.addEventListener('click', dismiss);
+                 }
+                 // Auto dismiss after 5 seconds
+                 const autoDismissTimer = setTimeout(dismiss, 5000);
+                 // Optional: Clear timer if manually closed
+                 if(closeButton) {
+                     closeButton.addEventListener('click', () => clearTimeout(autoDismissTimer));
+                 }
+                 // Optional: Pause timer on hover
+                 alert.addEventListener('mouseenter', () => clearTimeout(autoDismissTimer));
+                 alert.addEventListener('mouseleave', () => setTimeout(dismiss, 2000)); // Restart timer with shorter delay after hover
+
+            });
+
+            // Smooth scrolling for hash links (improved)
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    const hrefAttribute = this.getAttribute('href');
+                    // Check if it's just '#' or links to an element that exists
+                    if (hrefAttribute.length > 1 && hrefAttribute.startsWith('#')) {
+                        const targetElement = document.querySelector(hrefAttribute);
+                        if (targetElement) {
+                            e.preventDefault();
+                            // Calculate offset for fixed navbar
+                            const navbarHeight = document.querySelector('nav')?.offsetHeight || 64; // Fallback height
+                            const elementPosition = targetElement.getBoundingClientRect().top;
+                            const offsetPosition = elementPosition + window.pageYOffset - navbarHeight;
+
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
+
+                            // If mobile menu is open, close it
+                            if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                                mobileMenu.classList.add('hidden');
+                                mobileMenuButton.setAttribute('aria-expanded', 'false');
+                                mobileMenuButton.querySelector('i').classList.add('fa-bars');
+                                mobileMenuButton.querySelector('i').classList.remove('fa-times');
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Counter animation for stats (if applicable on the page)
+            const counters = document.querySelectorAll('.counter-value');
+            if (counters.length > 0) {
+                 const observer = new IntersectionObserver(entries => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const counter = entry.target;
+                            const target = +counter.getAttribute('data-target');
+                            const duration = 1500; // Animation duration in ms
+                            const stepTime = Math.abs(Math.floor(duration / target));
+                            
+                            let current = 0;
+                            const timer = setInterval(() => {
+                                current += 1;
+                                counter.textContent = current;
+                                if (current == target) {
+                                    clearInterval(timer);
+                                }
+                            }, stepTime);
+                            observer.unobserve(counter); // Animate only once
+                        }
+                    });
+                }, { threshold: 0.5 }); // Trigger when 50% visible
+
+                counters.forEach(counter => {
+                    observer.observe(counter);
+                });
+            }
+
+        });
+    </script>
+
+    <!-- Additional Page-Specific Scripts -->
+    {% block scripts %}{% endblock %}
+
+</body>
+</html> 

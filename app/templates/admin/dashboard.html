@@ -1,0 +1,366 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Stats Cards -->
+    <div class="col-md-3">
+        <div class="card stat-card bg-primary text-white">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Total Users</h6>
+                        <h3 class="mb-0">{{ user_count }}</h3>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.user_list') }}" class="text-white text-decoration-none">
+                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card bg-success text-white">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Blog Posts</h6>
+                        <h3 class="mb-0">{{ post_count }}</h3>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-blog"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.blog_list') }}" class="text-white text-decoration-none">
+                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card bg-info text-white">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Page Views</h6>
+                        <h3 class="mb-0" id="pageViewCount">--</h3>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.analytics') }}" class="text-white text-decoration-none">
+                        View Analytics <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card bg-warning text-white">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">New Users (Weekly)</h6>
+                        <h3 class="mb-0" id="newUserCount">--</h3>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.user_list') }}" class="text-white text-decoration-none">
+                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Charts -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">User & Content Analytics</h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chartDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Last 7 Days
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="chartDropdown">
+                        <li><a class="dropdown-item active" href="#">Last 7 Days</a></li>
+                        <li><a class="dropdown-item" href="#">Last 30 Days</a></li>
+                        <li><a class="dropdown-item" href="#">Last 90 Days</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="analyticsChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">Recent Activity</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item border-0 d-flex align-items-center px-4 py-3">
+                        <div class="me-3">
+                            <span class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-user-plus"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <p class="mb-0">New user registered</p>
+                            <small class="text-muted">5 minutes ago</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 d-flex align-items-center px-4 py-3">
+                        <div class="me-3">
+                            <span class="avatar-sm bg-success text-white rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-blog"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <p class="mb-0">New blog post published</p>
+                            <small class="text-muted">1 hour ago</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 d-flex align-items-center px-4 py-3">
+                        <div class="me-3">
+                            <span class="avatar-sm bg-info text-white rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-comment"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <p class="mb-0">New comment on "How to Prepare for Exams"</p>
+                            <small class="text-muted">3 hours ago</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 d-flex align-items-center px-4 py-3">
+                        <div class="me-3">
+                            <span class="avatar-sm bg-warning text-white rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-star"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <p class="mb-0">New review: 5 stars</p>
+                            <small class="text-muted">Yesterday</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center">
+                <a href="{{ url_for('admin.notifications') }}" class="btn btn-sm btn-outline-primary">View All Activity</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Posts -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">Recent Blog Posts</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Title</th>
+                                <th>Views</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for post in recent_posts %}
+                            <tr>
+                                <td>{{ post.title }}</td>
+                                <td>{{ post.views }}</td>
+                                <td>{% if post.created_at and post.created_at is not string %}{{ post.created_at.strftime('%Y-%m-%d') }}{% else %}N/A{% endif %}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="{{ url_for('blog.blog_detail', post_id=post._id) }}" target="_blank">View</a></li>
+                                            <li><a class="dropdown-item" href="#">Edit</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center">
+                <a href="{{ url_for('admin.blog_list') }}" class="btn btn-sm btn-outline-primary">View All Posts</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Users -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">Recent Users</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Joined</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in recent_users %}
+                            <tr>
+                                <td class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + user.profile_image) }}" alt="Profile" class="rounded-circle me-2" width="32" height="32">
+                                    <div>
+                                        <div class="fw-bold">{{ user.username }}</div>
+                                        <div class="small text-muted">{{ user.email }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if user.role == 'admin' else 'secondary' }}">
+                                        {{ user.role }}
+                                    </span>
+                                </td>
+                                <td>{% if user.created_at and user.created_at is not string %}{{ user.created_at.strftime('%Y-%m-%d') }}{% else %}N/A{% endif %}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="{{ url_for('admin.edit_user', user_id=user._id) }}">Edit</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center">
+                <a href="{{ url_for('admin.user_list') }}" class="btn btn-sm btn-outline-primary">View All Users</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-sm {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load stats from API
+        fetch('/admin/api/stats/overview')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('pageViewCount').textContent = data.visitors;
+                document.getElementById('newUserCount').textContent = data.users;
+            })
+            .catch(error => console.error('Error:', error));
+        
+        // Get data from backend
+        const postAnalytics = {{ post_analytics|safe }};
+        const userAnalytics = {{ user_analytics|safe }};
+        
+        // Prepare chart data
+        const dates = postAnalytics.map(item => item.date).reverse();
+        const postCounts = postAnalytics.map(item => item.count).reverse();
+        const userCounts = userAnalytics.map(item => item.count).reverse();
+        
+        // Create chart
+        const ctx = document.getElementById('analyticsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'New Users',
+                        data: userCounts,
+                        borderColor: '#4361ee',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'New Posts',
+                        data: postCounts,
+                        borderColor: '#0cbc87',
+                        backgroundColor: 'rgba(12, 188, 135, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(160, 160, 160, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(160, 160, 160, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

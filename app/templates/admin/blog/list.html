@@ -1,0 +1,346 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Blog Management{% endblock %}
+{% block page_title %}Blog Management{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Blog Posts</h5>
+        <a href="{{ url_for('admin.create_blog') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Create New Post
+        </a>
+    </div>
+    <div class="card-body">
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <form method="get" action="{{ url_for('admin.blog_list') }}" class="d-flex">
+                    <div class="input-group">
+                        <input type="search" name="search" class="form-control" placeholder="Search posts..." value="{{ search_query }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex">
+                    <select name="category" class="form-select me-2" onchange="location = this.value;">
+                        <option value="{{ url_for('admin.blog_list') }}">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ url_for('admin.blog_list', category=category._id) }}" {% if category_filter == category._id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <select name="sort" class="form-select" onchange="location = this.value;">
+                        <option value="{{ url_for('admin.blog_list', sort='newest') }}" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+                        <option value="{{ url_for('admin.blog_list', sort='oldest') }}" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+                        <option value="{{ url_for('admin.blog_list', sort='a-z') }}" {% if sort == 'a-z' %}selected{% endif %}>A-Z</option>
+                        <option value="{{ url_for('admin.blog_list', sort='z-a') }}" {% if sort == 'z-a' %}selected{% endif %}>Z-A</option>
+                        <option value="{{ url_for('admin.blog_list', sort='most-views') }}" {% if sort == 'most-views' %}selected{% endif %}>Most Views</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Posts Table -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40%;">Title</th>
+                        <th>Author</th>
+                        <th>Category</th>
+                        <th>Published</th>
+                        <th>Views</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in posts %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if post.featured_image %}
+                                <img src="{{ url_for('static', filename='uploads/blog/' + post.featured_image) }}" alt="Post Image" class="me-3 rounded" width="64" height="48" style="object-fit: cover;">
+                                {% else %}
+                                <div class="me-3 rounded bg-light d-flex align-items-center justify-content-center" style="width: 64px; height: 48px;">
+                                    <i class="fas fa-image text-secondary"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <a href="{{ url_for('blog.blog_detail', post_id=post._id) }}" class="text-decoration-none">{{ post.title }}</a>
+                                    {% if post.comments|length > 0 %}
+                                    <div class="small text-muted">
+                                        <i class="fas fa-comment me-1"></i> {{ post.comments|length }} comment{{ 's' if post.comments|length != 1 }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if post.author_info and post.author_info.profile_image %}
+                                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + post.author_info.profile_image) }}" alt="Profile" class="rounded-circle me-2" width="32" height="32">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='uploads/profile_pics/default_profile.jpg') }}" alt="Profile" class="rounded-circle me-2" width="32" height="32">
+                                {% endif %}
+                                <span>{% if post.author_info %}{{ post.author_info.username }}{% elif post.author_name %}{{ post.author_name }}{% else %}Unknown{% endif %}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if post.category %}
+                                {% for category in categories %}
+                                    {% if category._id|string == post.category|string %}
+                                        <span class="badge bg-info">{{ category.name }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge bg-secondary">Uncategorized</span>
+                            {% endif %}
+                        </td>
+                        <td>{% if post.created_at and post.created_at is not string %}{{ post.created_at.strftime('%Y-%m-%d') }}{% else %}N/A{% endif %}</td>
+                        <td>{{ post.views }}</td>
+                        <td>
+                            {% if post.published %}
+                            <span class="badge bg-success">Published</span>
+                            {% else %}
+                            <span class="badge bg-warning">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('admin.edit_blog', post_id=post._id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ post._id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Modal -->
+                            <div class="modal fade" id="deleteModal{{ post._id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ post._id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel{{ post._id }}">Confirm Delete</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the post "<strong>{{ post.title }}</strong>"?</p>
+                                            <p class="text-danger">This action cannot be undone. All comments associated with this post will also be deleted.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('admin.delete_blog', post_id=post._id) }}" method="post">
+                                                <button type="submit" class="btn btn-danger">Delete Post</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="text-muted">No blog posts found.</div>
+                            {% if search_query %}
+                            <div class="mt-3">
+                                <a href="{{ url_for('admin.blog_list') }}" class="btn btn-sm btn-outline-primary">Clear Search</a>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Blog post pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.blog_list', page=page-1, search=search_query, category=category_filter, sort=sort) }}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+                
+                {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {{ 'active' if p == page else '' }}">
+                    <a class="page-link" href="{{ url_for('admin.blog_list', page=p, search=search_query, category=category_filter, sort=sort) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.blog_list', page=page+1, search=search_query, category=category_filter, sort=sort) }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Category Management Card -->
+<div class="card mb-4">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Category Management</h5>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            <i class="fas fa-plus me-1"></i> Add Category
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Slug</th>
+                        <th>Posts Count</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                    <tr>
+                        <td>{{ category.name }}</td>
+                        <td>{{ category.slug }}</td>
+                        <td>{{ category_post_counts[category._id|string] }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editCategoryModal{{ category._id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCategoryModal{{ category._id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Edit Category Modal -->
+                            <div class="modal fade" id="editCategoryModal{{ category._id }}" tabindex="-1" aria-labelledby="editCategoryModalLabel{{ category._id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="editCategoryModalLabel{{ category._id }}">Edit Category</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form action="{{ url_for('admin.edit_category', category_id=category._id) }}" method="post" id="editCategoryForm{{ category._id }}">
+                                                <div class="mb-3">
+                                                    <label for="categoryName{{ category._id }}" class="form-label">Category Name</label>
+                                                    <input type="text" class="form-control" id="categoryName{{ category._id }}" name="name" value="{{ category.name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="categorySlug{{ category._id }}" class="form-label">Slug</label>
+                                                    <input type="text" class="form-control" id="categorySlug{{ category._id }}" name="slug" value="{{ category.slug }}" required>
+                                                    <div class="form-text">Used in URLs. Should be lowercase with hyphens instead of spaces.</div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" form="editCategoryForm{{ category._id }}" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Delete Category Modal -->
+                            <div class="modal fade" id="deleteCategoryModal{{ category._id }}" tabindex="-1" aria-labelledby="deleteCategoryModalLabel{{ category._id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteCategoryModalLabel{{ category._id }}">Confirm Delete</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the category "<strong>{{ category.name }}</strong>"?</p>
+                                            <p class="text-danger">Posts in this category will be moved to the "Uncategorized" category.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('admin.delete_category', category_id=category._id) }}" method="post">
+                                                <button type="submit" class="btn btn-danger">Delete Category</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4">
+                            <div class="text-muted">No categories found.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('admin.add_category') }}" method="post" id="addCategoryForm">
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">Category Name</label>
+                        <input type="text" class="form-control" id="categoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categorySlug" class="form-label">Slug</label>
+                        <input type="text" class="form-control" id="categorySlug" name="slug">
+                        <div class="form-text">Used in URLs. Leave blank to auto-generate from name.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addCategoryForm" class="btn btn-primary">Add Category</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Generate slug from name
+        const categoryName = document.getElementById('categoryName');
+        const categorySlug = document.getElementById('categorySlug');
+        
+        if (categoryName && categorySlug) {
+            categoryName.addEventListener('input', function() {
+                categorySlug.value = this.value
+                    .toLowerCase()
+                    .replace(/[^\w\s]/gi, '')
+                    .replace(/\s+/g, '-');
+            });
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,433 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-3 col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body p-0">
+                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                    <button class="nav-link active text-start ps-4 py-3 border-0 rounded-0" id="v-pills-general-tab" data-bs-toggle="pill" data-bs-target="#v-pills-general" type="button" role="tab" aria-controls="v-pills-general" aria-selected="true">
+                        <i class="fas fa-cog me-2"></i> General Settings
+                    </button>
+                    <button class="nav-link text-start ps-4 py-3 border-0 rounded-0" id="v-pills-profile-tab" data-bs-toggle="pill" data-bs-target="#v-pills-profile" type="button" role="tab" aria-controls="v-pills-profile" aria-selected="false">
+                        <i class="fas fa-user-circle me-2"></i> Your Profile
+                    </button>
+                    <button class="nav-link text-start ps-4 py-3 border-0 rounded-0" id="v-pills-email-tab" data-bs-toggle="pill" data-bs-target="#v-pills-email" type="button" role="tab" aria-controls="v-pills-email" aria-selected="false">
+                        <i class="fas fa-envelope me-2"></i> Email Settings
+                    </button>
+                    <button class="nav-link text-start ps-4 py-3 border-0 rounded-0" id="v-pills-security-tab" data-bs-toggle="pill" data-bs-target="#v-pills-security" type="button" role="tab" aria-controls="v-pills-security" aria-selected="false">
+                        <i class="fas fa-shield-alt me-2"></i> Security
+                    </button>
+                    <button class="nav-link text-start ps-4 py-3 border-0 rounded-0" id="v-pills-backup-tab" data-bs-toggle="pill" data-bs-target="#v-pills-backup" type="button" role="tab" aria-controls="v-pills-backup" aria-selected="false">
+                        <i class="fas fa-database me-2"></i> Backup & Restore
+                    </button>
+                    <button class="nav-link text-start ps-4 py-3 border-0 rounded-0" id="v-pills-logs-tab" data-bs-toggle="pill" data-bs-target="#v-pills-logs" type="button" role="tab" aria-controls="v-pills-logs" aria-selected="false">
+                        <i class="fas fa-history me-2"></i> System Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-9 col-lg-8">
+        <div class="tab-content" id="v-pills-tabContent">
+            <!-- General Settings -->
+            <div class="tab-pane fade show active" id="v-pills-general" role="tabpanel" aria-labelledby="v-pills-general-tab">
+                <div class="card mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">General Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('admin.settings') }}" method="post">
+                            <div class="mb-4">
+                                <label for="site_title" class="form-label">Site Title</label>
+                                <input type="text" class="form-control" id="site_title" name="site_title" value="{{ settings.site_title if settings else 'EduFuture' }}">
+                                <div class="form-text">The title of your website that appears in browsers.</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="site_description" class="form-label">Site Description</label>
+                                <textarea class="form-control" id="site_description" name="site_description" rows="2">{{ settings.site_description if settings else 'Modern Education Consultancy' }}</textarea>
+                                <div class="form-text">A short description of your website for search engines.</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="admin_email" class="form-label">Admin Email</label>
+                                <input type="email" class="form-control" id="admin_email" name="admin_email" value="{{ settings.admin_email if settings else current_user.email }}">
+                                <div class="form-text">This address is used for admin purposes.</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="posts_per_page" class="form-label">Posts Per Page</label>
+                                <input type="number" class="form-control" id="posts_per_page" name="posts_per_page" value="{{ settings.posts_per_page if settings else 10 }}" min="1" max="50">
+                                <div class="form-text">How many blog posts to display per page.</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6>Theme Options</h6>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="dark_mode_default" name="dark_mode_default" {% if settings and settings.dark_mode_default %}checked{% endif %}>
+                                    <label class="form-check-label" for="dark_mode_default">Dark Mode Default</label>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="allow_comments" name="allow_comments" {% if not settings or settings.allow_comments %}checked{% endif %}>
+                                    <label class="form-check-label" for="allow_comments">Allow Comments</label>
+                                </div>
+                                
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="moderate_comments" name="moderate_comments" {% if settings and settings.moderate_comments %}checked{% endif %}>
+                                    <label class="form-check-label" for="moderate_comments">Moderate Comments</label>
+                                </div>
+                            </div>
+                            
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Settings -->
+            <div class="tab-pane fade" id="v-pills-profile" role="tabpanel" aria-labelledby="v-pills-profile-tab">
+                <div class="card mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">Profile Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('admin.settings_profile') }}" method="post" enctype="multipart/form-data">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="me-4">
+                                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + current_user.profile_image) }}" alt="Profile" class="rounded-circle" width="100" height="100" id="profile-preview">
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ current_user.username }}</h6>
+                                    <p class="text-muted mb-2">{{ current_user.role }}</p>
+                                    <div class="mb-3">
+                                        <input type="file" class="form-control" id="profile_image" name="profile_image" accept="image/*" onchange="previewImage(this)">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" value="{{ current_user.username }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" value="{{ current_user.full_name if current_user.full_name else '' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="bio" class="form-label">Bio</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="3">{{ current_user.bio if current_user.bio else '' }}</textarea>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="twitter" class="form-label">Twitter URL</label>
+                                    <input type="url" class="form-control" id="twitter" name="twitter" value="{{ current_user.social.twitter if current_user.social and current_user.social.twitter else '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="linkedin" class="form-label">LinkedIn URL</label>
+                                    <input type="url" class="form-control" id="linkedin" name="linkedin" value="{{ current_user.social.linkedin if current_user.social and current_user.social.linkedin else '' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">Save Profile</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Email Settings -->
+            <div class="tab-pane fade" id="v-pills-email" role="tabpanel" aria-labelledby="v-pills-email-tab">
+                <div class="card mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">Email Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('admin.settings_email') }}" method="post">
+                            <div class="mb-3">
+                                <label for="smtp_host" class="form-label">SMTP Host</label>
+                                <input type="text" class="form-control" id="smtp_host" name="smtp_host" value="{{ email_settings.smtp_host if email_settings else '' }}">
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="smtp_port" class="form-label">SMTP Port</label>
+                                    <input type="number" class="form-control" id="smtp_port" name="smtp_port" value="{{ email_settings.smtp_port if email_settings else '587' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="smtp_security" class="form-label">Security</label>
+                                    <select class="form-select" id="smtp_security" name="smtp_security">
+                                        <option value="tls" {% if email_settings and email_settings.smtp_security == 'tls' %}selected{% endif %}>TLS</option>
+                                        <option value="ssl" {% if email_settings and email_settings.smtp_security == 'ssl' %}selected{% endif %}>SSL</option>
+                                        <option value="none" {% if email_settings and email_settings.smtp_security == 'none' %}selected{% endif %}>None</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="smtp_username" class="form-label">SMTP Username</label>
+                                <input type="text" class="form-control" id="smtp_username" name="smtp_username" value="{{ email_settings.smtp_username if email_settings else '' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="smtp_password" class="form-label">SMTP Password</label>
+                                <input type="password" class="form-control" id="smtp_password" name="smtp_password" value="{{ email_settings.smtp_password if email_settings else '' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="from_email" class="form-label">From Email</label>
+                                <input type="email" class="form-control" id="from_email" name="from_email" value="{{ email_settings.from_email if email_settings else '' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="from_name" class="form-label">From Name</label>
+                                <input type="text" class="form-control" id="from_name" name="from_name" value="{{ email_settings.from_name if email_settings else 'EduFuture' }}">
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-primary" id="testEmailBtn">Test Email</button>
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Settings -->
+            <div class="tab-pane fade" id="v-pills-security" role="tabpanel" aria-labelledby="v-pills-security-tab">
+                <div class="card mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">Security</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('admin.settings_security') }}" method="post">
+                            <h6 class="mb-3">Change Password</h6>
+                            
+                            <div class="mb-3">
+                                <label for="current_password" class="form-label">Current Password</label>
+                                <input type="password" class="form-control" id="current_password" name="current_password" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password" required>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <h6 class="mb-3">Login Security</h6>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="enable_2fa" name="enable_2fa" {% if security_settings and security_settings.enable_2fa %}checked{% endif %}>
+                                <label class="form-check-label" for="enable_2fa">Enable Two-Factor Authentication</label>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="login_notification" name="login_notification" {% if security_settings and security_settings.login_notification %}checked{% endif %}>
+                                <label class="form-check-label" for="login_notification">Email notification on new login</label>
+                            </div>
+                            
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">Update Security Settings</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Backup & Restore -->
+            <div class="tab-pane fade" id="v-pills-backup" role="tabpanel" aria-labelledby="v-pills-backup-tab">
+                <div class="card mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">Backup & Restore</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h6>Database Backup</h6>
+                            <p class="text-muted mb-3">Create a backup of your MongoDB database.</p>
+                            
+                            <form action="{{ url_for('admin.backup') }}" method="post" class="mb-3">
+                                <div class="d-flex">
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" id="include_users" name="include_users" checked>
+                                        <label class="form-check-label" for="include_users">Users</label>
+                                    </div>
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" id="include_posts" name="include_posts" checked>
+                                        <label class="form-check-label" for="include_posts">Posts</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="include_settings" name="include_settings" checked>
+                                        <label class="form-check-label" for="include_settings">Settings</label>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary mt-3">
+                                    <i class="fas fa-download me-1"></i> Download Backup
+                                </button>
+                            </form>
+                            
+                            <div class="alert alert-info" role="alert">
+                                <i class="fas fa-info-circle me-2"></i> Backups do not include uploaded media files.
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div>
+                            <h6>Restore from Backup</h6>
+                            <p class="text-muted mb-3">Upload a backup file to restore your database.</p>
+                            
+                            <form action="{{ url_for('admin.restore') }}" method="post" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <input type="file" class="form-control" id="backup_file" name="backup_file" accept=".json">
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirm_restore" name="confirm_restore" required>
+                                    <label class="form-check-label" for="confirm_restore">
+                                        I understand that restoring will overwrite existing data
+                                    </label>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-upload me-1"></i> Restore from Backup
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Logs -->
+            <div class="tab-pane fade" id="v-pills-logs" role="tabpanel" aria-labelledby="v-pills-logs-tab">
+                <div class="card mb-4">
+                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">System Logs</h5>
+                        
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-secondary">Refresh</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger">Clear Logs</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Level</th>
+                                        <th>User</th>
+                                        <th>Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td>{{ log.timestamp }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ log.level_class }}">{{ log.level }}</span>
+                                        </td>
+                                        <td>{{ log.user }}</td>
+                                        <td>{{ log.message }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No log entries found</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function(e) {
+                document.getElementById('profile-preview').src = e.target.result;
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Test email functionality
+        const testEmailBtn = document.getElementById('testEmailBtn');
+        if (testEmailBtn) {
+            testEmailBtn.addEventListener('click', function() {
+                const formData = new FormData(this.closest('form'));
+                formData.append('test', 'true');
+                
+                fetch('{{ url_for("admin.settings_email") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please check the console for details.');
+                });
+            });
+        }
+        
+        // New password validation
+        const newPasswordInput = document.getElementById('new_password');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+        
+        if (newPasswordInput && confirmPasswordInput) {
+            confirmPasswordInput.addEventListener('input', function() {
+                if (this.value !== newPasswordInput.value) {
+                    this.setCustomValidity("Passwords don't match");
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+            
+            newPasswordInput.addEventListener('input', function() {
+                if (confirmPasswordInput.value !== '') {
+                    if (confirmPasswordInput.value !== this.value) {
+                        confirmPasswordInput.setCustomValidity("Passwords don't match");
+                    } else {
+                        confirmPasswordInput.setCustomValidity('');
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

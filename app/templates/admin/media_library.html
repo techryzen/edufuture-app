@@ -1,0 +1,574 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Media Library{% endblock %}
+{% block page_title %}Media Library{% endblock %}
+
+{% block styles %}
+<style>
+    .media-card {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 200px;
+    }
+    
+    .media-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .media-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+    
+    .media-card .card-actions {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .media-card:hover .card-actions {
+        opacity: 1;
+    }
+    
+    .media-card .card-info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-size: 12px;
+    }
+    
+    .media-card .card-info .filename {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    
+    .dropzone {
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    
+    .dropzone.dragover {
+        border-color: #007bff;
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .media-preview {
+        max-width: 100%;
+        max-height: 300px;
+        margin-bottom: 15px;
+    }
+    
+    .folder-card {
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 200px;
+        background-color: var(--bs-light);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    
+    .folder-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        background-color: var(--bs-primary-bg-subtle);
+    }
+    
+    .folder-icon {
+        font-size: 48px;
+        color: var(--bs-primary);
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <h5 class="mb-0">Media Library</h5>
+            {% if current_folder != '' %}
+            <nav aria-label="breadcrumb" class="ms-3">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.media_library') }}">Root</a></li>
+                    {% for folder in current_folder.split('/') %}
+                        {% if loop.last %}
+                        <li class="breadcrumb-item active" aria-current="page">{{ folder }}</li>
+                        {% else %}
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('admin.media_library', folder='/'.join(current_folder.split('/')[:loop.index])) }}">{{ folder }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                </ol>
+            </nav>
+            {% endif %}
+        </div>
+        <div class="d-flex">
+            <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="fas fa-upload me-1"></i> Upload Media
+            </button>
+            <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#newFolderModal">
+                <i class="fas fa-folder-plus me-1"></i> New Folder
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-sort me-1"></i> Sort
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+                    <li><a class="dropdown-item" href="{{ url_for('admin.media_library', folder=current_folder, sort='newest') }}">Newest First</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.media_library', folder=current_folder, sort='oldest') }}">Oldest First</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.media_library', folder=current_folder, sort='name_asc') }}">Name (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.media_library', folder=current_folder, sort='name_desc') }}">Name (Z-A)</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.media_library', folder=current_folder, sort='size_asc') }}">Size (Smallest)</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.media_library', folder=current_folder, sort='size_desc') }}">Size (Largest)</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Filter Tools -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <form method="get" action="{{ url_for('admin.media_library') }}" class="d-flex">
+                    <div class="input-group">
+                        <input type="search" name="search" class="form-control" placeholder="Search media..." value="{{ search_query }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" name="folder" value="{{ current_folder }}">
+                </form>
+            </div>
+            <div class="col-md-4">
+                <select name="type" class="form-select" onchange="location = this.value;">
+                    <option value="{{ url_for('admin.media_library', folder=current_folder) }}" {% if not type_filter %}selected{% endif %}>All Files</option>
+                    <option value="{{ url_for('admin.media_library', folder=current_folder, type='image') }}" {% if type_filter == 'image' %}selected{% endif %}>Images</option>
+                    <option value="{{ url_for('admin.media_library', folder=current_folder, type='document') }}" {% if type_filter == 'document' %}selected{% endif %}>Documents</option>
+                    <option value="{{ url_for('admin.media_library', folder=current_folder, type='video') }}" {% if type_filter == 'video' %}selected{% endif %}>Videos</option>
+                    <option value="{{ url_for('admin.media_library', folder=current_folder, type='audio') }}" {% if type_filter == 'audio' %}selected{% endif %}>Audio</option>
+                </select>
+            </div>
+        </div>
+        
+        {% if folders or files %}
+        <div class="media-grid mb-4">
+            <!-- Folders -->
+            {% for folder in folders %}
+            <a href="{{ url_for('admin.media_library', folder=(current_folder + '/' if current_folder else '') + folder.name) }}" class="text-decoration-none">
+                <div class="folder-card">
+                    <div class="folder-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="text-center px-2">
+                        <div class="fw-bold text-truncate">{{ folder.name }}</div>
+                        <div class="small text-muted">{{ folder.items_count }} items</div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+            
+            <!-- Files -->
+            {% for file in files %}
+            <div class="media-card">
+                {% if file.type == 'image' %}
+                <img src="{{ url_for('static', filename=file.path) }}" alt="{{ file.name }}">
+                {% elif file.type == 'video' %}
+                <div class="d-flex align-items-center justify-content-center h-100 bg-dark">
+                    <i class="fas fa-video fa-3x text-light"></i>
+                </div>
+                {% elif file.type == 'audio' %}
+                <div class="d-flex align-items-center justify-content-center h-100 bg-info bg-opacity-25">
+                    <i class="fas fa-music fa-3x text-info"></i>
+                </div>
+                {% elif file.type == 'document' %}
+                <div class="d-flex align-items-center justify-content-center h-100 bg-primary bg-opacity-25">
+                    <i class="fas fa-file-alt fa-3x text-primary"></i>
+                </div>
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center h-100 bg-secondary bg-opacity-25">
+                    <i class="fas fa-file fa-3x text-secondary"></i>
+                </div>
+                {% endif %}
+                
+                <div class="card-info">
+                    <div class="filename">{{ file.name }}</div>
+                    <div class="d-flex justify-content-between">
+                        <small>{{ file.size }}</small>
+                        <small>{{ file.date }}</small>
+                    </div>
+                </div>
+                
+                <div class="card-actions">
+                    <div class="btn-group">
+                        <a href="{{ url_for('static', filename=file.path) }}" class="btn btn-sm btn-primary" target="_blank" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-info copy-btn" data-url="{{ url_for('static', filename=file.path, _external=True) }}" title="Copy URL">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ file.id }}" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{ file.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ file.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel{{ file.id }}">Confirm Delete</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete <strong>{{ file.name }}</strong>?</p>
+                                <p class="text-danger">This action cannot be undone.</p>
+                                
+                                {% if file.type == 'image' %}
+                                <div class="text-center">
+                                    <img src="{{ url_for('static', filename=file.path) }}" alt="{{ file.name }}" style="max-height: 200px; max-width: 100%;">
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form action="{{ url_for('admin.delete_media', file_id=file.id) }}" method="post">
+                                    <input type="hidden" name="folder" value="{{ current_folder }}">
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Media pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.media_library', folder=current_folder, page=page-1, search=search_query, type=type_filter, sort=sort) }}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+                
+                {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {{ 'active' if p == page else '' }}">
+                    <a class="page-link" href="{{ url_for('admin.media_library', folder=current_folder, page=p, search=search_query, type=type_filter, sort=sort) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.media_library', folder=current_folder, page=page+1, search=search_query, type=type_filter, sort=sort) }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            {% if search_query %}
+            <div class="mb-4">
+                <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                <h4>No files or folders found for "{{ search_query }}"</h4>
+                <p class="text-muted">Try a different search term or clear your search.</p>
+                <a href="{{ url_for('admin.media_library', folder=current_folder) }}" class="btn btn-outline-primary mt-2">Clear Search</a>
+            </div>
+            {% else %}
+            <div class="mb-4">
+                <i class="fas fa-folder-open fa-3x mb-3 text-muted"></i>
+                <h4>This folder is empty</h4>
+                <p class="text-muted">Upload files or create new folders to get started.</p>
+                <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="fas fa-upload me-1"></i> Upload Files
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadModalLabel">Upload Media</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('admin.upload_media') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <input type="hidden" name="folder" value="{{ current_folder }}">
+                    
+                    <div class="mb-3">
+                        <div id="dropzone" class="dropzone">
+                            <div class="text-center">
+                                <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                                <h5>Drag & drop files here</h5>
+                                <p class="text-muted mb-3">or click to select files</p>
+                                <button type="button" class="btn btn-outline-primary" id="browseBtn">Browse Files</button>
+                                <input type="file" id="fileInput" name="files" multiple style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="previewContainer" class="mb-3" style="display: none;">
+                        <h6>Selected Files:</h6>
+                        <div id="filePreviewList" class="list-group mt-2"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="uploadForm" class="btn btn-primary">Upload</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Folder Modal -->
+<div class="modal fade" id="newFolderModal" tabindex="-1" aria-labelledby="newFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newFolderModalLabel">Create New Folder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('admin.create_folder') }}" method="post" id="folderForm">
+                    <input type="hidden" name="parent_folder" value="{{ current_folder }}">
+                    
+                    <div class="mb-3">
+                        <label for="folderName" class="form-label">Folder Name</label>
+                        <input type="text" class="form-control" id="folderName" name="folder_name" required>
+                        <div class="form-text">Only letters, numbers, hyphens, and underscores allowed.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="folderForm" class="btn btn-primary">Create Folder</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy URL functionality
+        document.querySelectorAll('.copy-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const url = this.getAttribute('data-url');
+                navigator.clipboard.writeText(url).then(() => {
+                    // Show success tooltip
+                    const originalTitle = this.getAttribute('title');
+                    this.setAttribute('title', 'Copied!');
+                    
+                    // Simulate tooltip
+                    const tooltip = new bootstrap.Tooltip(this, {
+                        trigger: 'manual'
+                    });
+                    tooltip.show();
+                    
+                    // Reset tooltip after 1 second
+                    setTimeout(() => {
+                        tooltip.hide();
+                        this.setAttribute('title', originalTitle);
+                    }, 1000);
+                });
+            });
+        });
+        
+        // File upload and preview
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const filePreviewList = document.getElementById('filePreviewList');
+        
+        // Browse button click
+        browseBtn.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        // File input change
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                updateFilePreview(this.files);
+            }
+        });
+        
+        // Drag and drop events
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropzone.classList.add('dragover');
+        }
+        
+        function unhighlight() {
+            dropzone.classList.remove('dragover');
+        }
+        
+        dropzone.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFilePreview(files);
+            }
+        }
+        
+        function updateFilePreview(files) {
+            filePreviewList.innerHTML = '';
+            previewContainer.style.display = 'block';
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileSize = formatFileSize(file.size);
+                const isImage = file.type.startsWith('image/');
+                
+                const fileItem = document.createElement('div');
+                fileItem.className = 'list-group-item p-2';
+                
+                if (isImage) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'img-thumbnail me-2';
+                        img.style.width = '50px';
+                        img.style.height = '50px';
+                        img.style.objectFit = 'cover';
+                        
+                        const fileContent = document.createElement('div');
+                        fileContent.className = 'd-flex align-items-center';
+                        fileContent.appendChild(img);
+                        
+                        const fileInfo = document.createElement('div');
+                        fileInfo.innerHTML = `
+                            <div class="fw-bold">${file.name}</div>
+                            <div class="small text-muted">${fileSize}</div>
+                        `;
+                        
+                        fileContent.appendChild(fileInfo);
+                        fileItem.appendChild(fileContent);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // Non-image file
+                    let iconClass = 'fa-file';
+                    
+                    if (file.type.includes('pdf')) {
+                        iconClass = 'fa-file-pdf';
+                    } else if (file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                        iconClass = 'fa-file-word';
+                    } else if (file.type.includes('excel') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
+                        iconClass = 'fa-file-excel';
+                    } else if (file.type.includes('video')) {
+                        iconClass = 'fa-file-video';
+                    } else if (file.type.includes('audio')) {
+                        iconClass = 'fa-file-audio';
+                    } else if (file.type.includes('zip') || file.type.includes('rar') || file.type.includes('tar')) {
+                        iconClass = 'fa-file-archive';
+                    }
+                    
+                    fileItem.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="fas ${iconClass} fa-2x me-2 text-primary"></i>
+                            <div>
+                                <div class="fw-bold">${file.name}</div>
+                                <div class="small text-muted">${fileSize}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                filePreviewList.appendChild(fileItem);
+            }
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Validate folder name
+        const folderNameInput = document.getElementById('folderName');
+        if (folderNameInput) {
+            folderNameInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^a-zA-Z0-9_-]/g, '');
+            });
+        }
+    });
+</script>
+{% endblock %} 

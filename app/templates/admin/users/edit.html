@@ -1,0 +1,143 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Edit User{% endblock %}
+{% block page_title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card mb-4">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Edit User Information</h5>
+                <span class="badge bg-{{ 'primary' if user.role == 'admin' else ('info' if user.role == 'editor' else 'secondary') }}">
+                    {{ user.role }}
+                </span>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin.edit_user', user_id=user._id) }}" method="post" enctype="multipart/form-data">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                            </div>
+                        
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                            </div>
+                        
+                            <div class="mb-3">
+                                <label for="password" class="form-label">New Password (leave blank to keep current)</label>
+                                <input type="password" class="form-control" id="password" name="password">
+                                <div class="form-text">Leave blank to keep the current password.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="role" class="form-label">Role</label>
+                                <select class="form-select" id="role" name="role">
+                                    <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                                    <option value="editor" {% if user.role == 'editor' %}selected{% endif %}>Editor</option>
+                                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Account Created</label>
+                                <div class="form-control bg-light">{% if user.created_at and user.created_at is not string %}{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}N/A{% endif %}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="text-center mb-3">
+                                <div class="profile-image-container mb-3 mx-auto" style="width: 150px; height: 150px; overflow: hidden; border-radius: 50%; background-color: #f8f9fa;">
+                                    <img id="profile-preview" src="{{ url_for('static', filename='uploads/profile_pics/' + user.profile_image) }}" class="img-fluid rounded-circle" alt="Profile Preview">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="profile_image" class="form-label">Change Profile Image</label>
+                                    <input type="file" class="form-control" id="profile_image" name="profile_image" accept="image/*" onchange="previewImage(this)">
+                                    <div class="form-text">Leave blank to keep the current image.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Activity</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Total Posts</span>
+                                            <span class="badge bg-primary rounded-pill">--</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Total Comments</span>
+                                            <span class="badge bg-primary rounded-pill">--</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Last Login</span>
+                                            <span class="badge bg-secondary rounded-pill">--</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('admin.user_list') }}" class="btn btn-secondary me-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+            
+            {% if user._id != current_user.get_id() %}
+            <div class="card-footer bg-transparent border-0">
+                <div class="d-flex justify-content-center">
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash me-1"></i> Delete User
+                    </button>
+                </div>
+                
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete user <strong>{{ user.username }}</strong>? This action cannot be undone.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form action="{{ url_for('admin.delete_user', user_id=user._id) }}" method="post">
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function(e) {
+                document.getElementById('profile-preview').src = e.target.result;
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %} 

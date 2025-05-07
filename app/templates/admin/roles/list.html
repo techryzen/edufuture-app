@@ -1,0 +1,271 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Roles & Permissions{% endblock %}
+{% block page_title %}Roles & Permissions{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Role Management</h5>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+                    <i class="fas fa-plus me-1"></i> Add New Role
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Role</th>
+                                <th>Description</th>
+                                <th>Users</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role in roles %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if role._id == 'admin' else ('info' if role._id == 'editor' else 'secondary') }}">
+                                        {{ role.name }}
+                                    </span>
+                                </td>
+                                <td>{{ role.description }}</td>
+                                <td>--</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRoleModal{{ role._id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        {% if role._id != 'admin' and role._id != 'user' %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteRoleModal{{ role._id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Edit Role Modal -->
+                                    <div class="modal fade" id="editRoleModal{{ role._id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Edit Role: {{ role.name }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <form id="editRoleForm{{ role._id }}">
+                                                        <div class="mb-3">
+                                                            <label for="roleName{{ role._id }}" class="form-label">Role Name</label>
+                                                            <input type="text" class="form-control" id="roleName{{ role._id }}" value="{{ role.name }}" {% if role._id == 'admin' or role._id == 'user' %}readonly{% endif %}>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="roleDescription{{ role._id }}" class="form-label">Description</label>
+                                                            <textarea class="form-control" id="roleDescription{{ role._id }}" rows="3">{{ role.description }}</textarea>
+                                                        </div>
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Permissions</label>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="viewUsers{{ role._id }}" checked disabled>
+                                                                <label class="form-check-label" for="viewUsers{{ role._id }}">
+                                                                    View Users
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="manageUsers{{ role._id }}" {% if role._id == 'admin' %}checked{% endif %} {% if role._id == 'admin' %}disabled{% endif %}>
+                                                                <label class="form-check-label" for="manageUsers{{ role._id }}">
+                                                                    Manage Users
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="createPosts{{ role._id }}" checked>
+                                                                <label class="form-check-label" for="createPosts{{ role._id }}">
+                                                                    Create Posts
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="managePosts{{ role._id }}" {% if role._id == 'admin' or role._id == 'editor' %}checked{% endif %}>
+                                                                <label class="form-check-label" for="managePosts{{ role._id }}">
+                                                                    Manage All Posts
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="manageSettings{{ role._id }}" {% if role._id == 'admin' %}checked disabled{% endif %}>
+                                                                <label class="form-check-label" for="manageSettings{{ role._id }}">
+                                                                    Manage Settings
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="button" class="btn btn-primary">Save Changes</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if role._id != 'admin' and role._id != 'user' %}
+                                    <!-- Delete Role Modal -->
+                                    <div class="modal fade" id="deleteRoleModal{{ role._id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Delete Role: {{ role.name }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Are you sure you want to delete the role <strong>{{ role.name }}</strong>?</p>
+                                                    <p class="text-danger">This action cannot be undone. Users with this role will be reassigned to the default "User" role.</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="button" class="btn btn-danger">Delete Role</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">Role Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="fw-bold">Administrator</h6>
+                    <p class="text-muted mb-2">Full access to all features and settings.</p>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="fw-bold">Editor</h6>
+                    <p class="text-muted mb-2">Can manage all content but not users or settings.</p>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 70%;" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="fw-bold">User</h6>
+                    <p class="text-muted mb-2">Limited access; can create and manage only own content.</p>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-secondary" role="progressbar" style="width: 30%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">Permissions Guide</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Each role has specific permissions that determine what users can do.</p>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold text-primary"><i class="fas fa-eye me-2"></i> View</h6>
+                    <p class="small mb-0">View permissions allow users to see specific content.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold text-success"><i class="fas fa-plus me-2"></i> Create</h6>
+                    <p class="small mb-0">Create permissions allow users to add new content.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold text-warning"><i class="fas fa-edit me-2"></i> Edit</h6>
+                    <p class="small mb-0">Edit permissions allow users to modify content.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold text-danger"><i class="fas fa-trash me-2"></i> Delete</h6>
+                    <p class="small mb-0">Delete permissions allow users to remove content.</p>
+                </div>
+                
+                <div>
+                    <h6 class="fw-bold text-info"><i class="fas fa-cog me-2"></i> Manage</h6>
+                    <p class="small mb-0">Manage permissions provide full control over specific features.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Role Modal -->
+<div class="modal fade" id="addRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addRoleForm">
+                    <div class="mb-3">
+                        <label for="newRoleName" class="form-label">Role Name</label>
+                        <input type="text" class="form-control" id="newRoleName" placeholder="Enter role name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="newRoleDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="newRoleDescription" rows="3" placeholder="Enter role description"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Permissions</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="newViewUsers" checked>
+                            <label class="form-check-label" for="newViewUsers">
+                                View Users
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="newManageUsers">
+                            <label class="form-check-label" for="newManageUsers">
+                                Manage Users
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="newCreatePosts" checked>
+                            <label class="form-check-label" for="newCreatePosts">
+                                Create Posts
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="newManagePosts">
+                            <label class="form-check-label" for="newManagePosts">
+                                Manage All Posts
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="newManageSettings">
+                            <label class="form-check-label" for="newManageSettings">
+                                Manage Settings
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary">Create Role</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

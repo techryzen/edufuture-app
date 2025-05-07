@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="pt-32 pb-16 bg-gradient-to-b from-blue-50 to-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4">Search Results</h1>
+            <p class="text-gray-600 max-w-3xl mx-auto">
+                Found {{ results|length }} results for "{{ query }}"
+            </p>
+        </div>
+        
+        <div class="max-w-4xl mx-auto">
+            {% if results %}
+                <div class="space-y-6">
+                    {% for post in results %}
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                            <div class="md:flex">
+                                {% if post.image %}
+                                    <div class="md:flex-shrink-0 md:w-48">
+                                        <img src="{{ url_for('static', filename='uploads/blog/' + post.image) }}" alt="{{ post.title }}" class="h-full w-full object-cover">
+                                    </div>
+                                {% endif %}
+                                <div class="p-6">
+                                    <a href="{{ url_for('blog.blog_detail', post_id=post._id) }}" class="text-xl font-bold text-primary hover:text-blue-700">
+                                        {{ post.title }}
+                                    </a>
+                                    <p class="text-sm text-gray-500 mb-2">
+                                        <i class="far fa-calendar-alt mr-1"></i> {{ post.created_at.strftime('%B %d, %Y') }}
+                                    </p>
+                                    <p class="text-gray-600 mb-4">
+                                        {{ post.content|striptags|truncate(150) }}
+                                    </p>
+                                    <a href="{{ url_for('blog.blog_detail', post_id=post._id) }}" class="inline-block text-primary hover:underline">
+                                        Read more <i class="fas fa-arrow-right ml-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                    <div class="text-7xl text-gray-300 mb-4">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">No Results Found</h2>
+                    <p class="text-gray-600 mb-6">
+                        We couldn't find any results matching "{{ query }}". Please try a different search term.
+                    </p>
+                    <a href="{{ url_for('main.home') }}" class="inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                        Return to Home
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %} 

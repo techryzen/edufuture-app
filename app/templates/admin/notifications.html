@@ -1,0 +1,86 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Notifications</h5>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="markAllAsRead">
+            <i class="fas fa-check-double me-1"></i> Mark All as Read
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            {% for notification in notifications %}
+            <div class="list-group-item list-group-item-action px-4 py-3 d-flex justify-content-between align-items-center">
+                <div class="notification-content">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="notification-icon rounded-circle me-3 d-flex align-items-center justify-content-center 
+                            {% if notification.type == 'alert' %}bg-danger text-white{% 
+                            elif notification.type == 'warning' %}bg-warning text-dark{% 
+                            elif notification.type == 'info' %}bg-info text-white{% 
+                            else %}bg-primary text-white{% endif %}" 
+                            style="width: 40px; height: 40px;">
+                            <i class="fas {% if notification.type == 'alert' %}fa-exclamation{% 
+                            elif notification.type == 'warning' %}fa-exclamation-triangle{% 
+                            elif notification.type == 'info' %}fa-info{% 
+                            else %}fa-bell{% endif %}"></i>
+                        </span>
+                        <div>
+                            <h6 class="mb-0">{{ notification.title }}</h6>
+                            <small class="text-muted">{% if notification.created_at %}{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}Unknown Date{% endif %}</small>
+                        </div>
+                    </div>
+                    <p class="mb-0 ms-5 ps-3">{{ notification.message }}</p>
+                </div>
+                {% if not notification.read %}
+                <span class="badge bg-danger rounded-pill">New</span>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-bell fa-3x text-muted mb-3"></i>
+                <p class="mb-0 text-muted">No notifications available.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const markAllAsReadBtn = document.getElementById('markAllAsRead');
+        
+        if (markAllAsReadBtn) {
+            markAllAsReadBtn.addEventListener('click', function() {
+                // Send AJAX request to mark all as read
+                fetch('{{ url_for("admin.mark_all_notifications_read") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove all "New" badges
+                        document.querySelectorAll('.badge.bg-danger.rounded-pill').forEach(badge => {
+                            badge.remove();
+                        });
+                        
+                        // Show success message
+                        alert('All notifications marked as read.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %} 

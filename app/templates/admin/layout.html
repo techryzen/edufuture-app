@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard{% endblock %} | EduFuture Admin</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4361ee',
+                        secondary: '#3f8cff',
+                        success: '#0cbc87',
+                        info: '#4f9ef8',
+                        warning: '#f7c32e',
+                        danger: '#d6293e',
+                        light: '#f5f7f9',
+                        dark: '#24292d',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- SASS Styles (compiled) -->
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f8cff;
+            --success: #0cbc87;
+            --info: #4f9ef8;
+            --warning: #f7c32e;
+            --danger: #d6293e;
+            --light: #f5f7f9;
+            --dark: #24292d;
+        }
+        
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar.collapsed {
+            width: 60px;
+        }
+        
+        .content-wrapper {
+            margin-left: 250px;
+            transition: all 0.3s;
+        }
+        
+        .content-wrapper.expanded {
+            margin-left: 60px;
+        }
+        
+        .sidebar .nav-link {
+            padding: 10px 15px;
+            color: rgba(255, 255, 255, 0.85);
+            display: flex;
+            align-items: center;
+            border-radius: 5px;
+            margin: 0 8px;
+            transition: all 0.2s;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        
+        .sidebar .nav-link i {
+            width: 24px;
+            font-size: 18px;
+            margin-right: 10px;
+            text-align: center;
+        }
+        
+        .sidebar.collapsed .nav-text {
+            display: none;
+        }
+        
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 10px;
+        }
+        
+        .sidebar.collapsed .nav-link i {
+            margin-right: 0;
+        }
+        
+        .sidebar.collapsed .sidebar-header span {
+            display: none;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            padding: 3px 6px;
+            border-radius: 50%;
+            background-color: var(--danger);
+            color: white;
+            font-size: 10px;
+        }
+        
+        /* Card styles */
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .stat-card .icon {
+            font-size: 28px;
+            opacity: 0.8;
+        }
+        
+        /* Dark mode */
+        .dark-mode .sidebar {
+            background-color: #1e2227;
+        }
+        
+        .dark-mode .navbar {
+            background-color: #24292d !important;
+        }
+        
+        .dark-mode {
+            background-color: #121418;
+            color: #f5f7f9;
+        }
+        
+        .dark-mode .card {
+            background-color: #24292d;
+            color: #f5f7f9;
+        }
+        
+        .dark-mode .table {
+            color: #f5f7f9;
+        }
+        
+        .dark-mode .form-control,
+        .dark-mode .form-select {
+            background-color: #1e2227;
+            border-color: #2f343a;
+            color: #f5f7f9;
+        }
+        
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #fff;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            z-index: 1050;
+            transition: right 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+        
+        .drawer.show {
+            right: 0;
+        }
+        
+        .dark-mode .drawer {
+            background-color: #24292d;
+            color: #f5f7f9;
+        }
+        
+        /* Override Tailwind's preflight */
+        button, input, optgroup, select, textarea {
+            font-family: inherit;
+        }
+    </style>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Additional styles for specific pages -->
+    {% block styles %}{% endblock %}
+</head>
+<body class="{% if session.get('dark_mode') %}dark-mode{% endif %}">
+    <!-- Sidebar -->
+    <nav class="sidebar {% if session.get('sidebar_collapsed') %}collapsed{% endif %} bg-dark text-white">
+        <div class="sidebar-header d-flex align-items-center justify-content-between p-3">
+            <a href="{{ url_for('admin.dashboard') }}" class="text-white text-decoration-none d-flex align-items-center">
+                <i class="fas fa-graduation-cap fs-4 me-2"></i>
+                <span class="fw-bold fs-5">EduFuture Admin</span>
+            </a>
+            <button id="sidebarToggle" class="btn btn-sm text-white border-0">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <div class="mt-2">
+            <ul class="nav flex-column px-2">
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.user_list') }}" class="nav-link {% if 'admin.user' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span class="nav-text">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.role_list') }}" class="nav-link {% if request.endpoint == 'admin.role_list' %}active{% endif %}">
+                        <i class="fas fa-user-shield"></i>
+                        <span class="nav-text">Roles & Permissions</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.blog_list') }}" class="nav-link {% if 'admin.blog' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-blog"></i>
+                        <span class="nav-text">Blog Posts</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.media_library') }}" class="nav-link {% if request.endpoint == 'admin.media_library' %}active{% endif %}">
+                        <i class="fas fa-images"></i>
+                        <span class="nav-text">Media Library</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.analytics') }}" class="nav-link {% if request.endpoint == 'admin.analytics' %}active{% endif %}">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="nav-text">Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.notifications') }}" class="nav-link {% if request.endpoint == 'admin.notifications' %}active{% endif %}">
+                        <i class="fas fa-bell"></i>
+                        <span class="nav-text">Notifications</span>
+                        <span id="notificationCount" class="notification-badge" style="display: none;">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('admin.settings') }}" class="nav-link {% if request.endpoint == 'admin.settings' %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span class="nav-text">Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item mt-3">
+                    <a href="{{ url_for('main.home') }}" class="nav-link">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span class="nav-text">View Site</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="content-wrapper {% if session.get('sidebar_collapsed') %}expanded{% endif %}">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h5 class="text-white mb-0">{% block page_title %}Dashboard{% endblock %}</h5>
+                </div>
+                <div class="d-flex">
+                    <!-- Search -->
+                    <form class="d-none d-md-flex me-3" action="{{ url_for('admin.user_list') }}">
+                        <div class="input-group">
+                            <input type="search" name="search" class="form-control" placeholder="Search..." aria-label="Search">
+                            <button class="btn btn-outline-light" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Dark Mode Toggle -->
+                    <button id="darkModeToggle" class="btn btn-link text-white me-2">
+                        <i class="fas {% if session.get('dark_mode') %}fa-sun{% else %}fa-moon{% endif %}"></i>
+                    </button>
+                    
+                    <!-- Notifications -->
+                    <div class="dropdown me-2">
+                        <button class="btn btn-link text-white position-relative" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span id="headerNotificationCount" class="notification-badge" style="display: none;">0</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="width: 300px;">
+                            <li><h6 class="dropdown-header">Notifications</h6></li>
+                            <div id="notificationsContainer">
+                                <li><div class="dropdown-item text-center">Loading...</div></li>
+                            </div>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="{{ url_for('admin.notifications') }}">View All</a></li>
+                        </ul>
+                    </div>
+                    
+                    <!-- User Menu -->
+                    <div class="dropdown">
+                        <button class="btn btn-link text-white d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="{{ url_for('static', filename='uploads/profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2" alt="Profile" width="30" height="30">
+                            <span class="d-none d-lg-inline">{{ current_user.username }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><h6 class="dropdown-header">{{ current_user.email }}</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.settings') }}"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i> Log Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        <div class="container-fluid pb-5">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Main Content -->
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- Notification Drawer -->
+    <div id="notificationDrawer" class="drawer">
+        <div class="p-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Notifications</h5>
+                <button id="closeDrawer" class="btn btn-sm btn-link text-dark">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="drawerNotificationsContainer" class="p-3">
+            <!-- Notifications will be loaded here -->
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Admin Scripts -->
+    <script>
+        // Toggle sidebar
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('collapsed');
+            document.querySelector('.content-wrapper').classList.toggle('expanded');
+            
+            // Save preference in session
+            fetch('/admin/api/settings/sidebar-toggle', { method: 'POST' })
+                .catch(error => console.error('Error:', error));
+        });
+        
+        // Toggle dark mode
+        document.getElementById('darkModeToggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            
+            // Update icon
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('fa-moon')) {
+                icon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                icon.classList.replace('fa-sun', 'fa-moon');
+            }
+            
+            // Save preference in session
+            fetch('/admin/api/settings/dark-mode-toggle', { method: 'POST' })
+                .catch(error => console.error('Error:', error));
+        });
+        
+        // Notification drawer
+        function showNotificationDrawer() {
+            document.getElementById('notificationDrawer').classList.add('show');
+        }
+        
+        document.getElementById('closeDrawer').addEventListener('click', function() {
+            document.getElementById('notificationDrawer').classList.remove('show');
+        });
+        
+        // Get unread notifications count
+        function updateNotificationCount() {
+            fetch('/admin/api/notifications/unread')
+                .then(response => response.json())
+                .then(data => {
+                    const count = data.count;
+                    const badge = document.getElementById('notificationCount');
+                    const headerBadge = document.getElementById('headerNotificationCount');
+                    
+                    if (count > 0) {
+                        badge.textContent = count;
+                        badge.style.display = 'block';
+                        headerBadge.textContent = count;
+                        headerBadge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                        headerBadge.style.display = 'none';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        // Load notifications in dropdown
+        function loadNotifications() {
+            fetch('/admin/api/notifications')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('notificationsContainer');
+                    const drawerContainer = document.getElementById('drawerNotificationsContainer');
+                    
+                    container.innerHTML = '';
+                    drawerContainer.innerHTML = '';
+                    
+                    if (data.notifications.length === 0) {
+                        container.innerHTML = '<li><div class="dropdown-item text-center">No notifications</div></li>';
+                        drawerContainer.innerHTML = '<div class="text-center py-3">No notifications</div>';
+                        return;
+                    }
+                    
+                    data.notifications.slice(0, 5).forEach(notification => {
+                        const item = document.createElement('li');
+                        const time = new Date(notification.created_at.$date);
+                        const timeString = time.toLocaleString();
+                        
+                        item.innerHTML = `
+                            <a class="dropdown-item ${notification.read ? '' : 'fw-bold'}" href="${notification.link || '#'}">
+                                <div class="small text-muted">${timeString}</div>
+                                <div class="${notification.read ? '' : 'text-primary'}">${notification.message}</div>
+                            </a>
+                        `;
+                        container.appendChild(item);
+                    });
+                    
+                    data.notifications.forEach(notification => {
+                        const item = document.createElement('div');
+                        const time = new Date(notification.created_at.$date);
+                        const timeString = time.toLocaleString();
+                        
+                        item.className = `card mb-2 ${notification.read ? 'bg-light' : 'bg-white border-primary'}`;
+                        item.innerHTML = `
+                            <div class="card-body p-2">
+                                <div class="small text-muted">${timeString}</div>
+                                <div class="${notification.read ? '' : 'fw-bold'}">${notification.message}</div>
+                                <div class="mt-2">
+                                    <a href="${notification.link || '#'}" class="btn btn-sm btn-outline-primary">View</a>
+                                    <button class="btn btn-sm btn-outline-secondary mark-read-btn" data-id="${notification._id.$oid}">
+                                        ${notification.read ? 'Mark Unread' : 'Mark Read'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        drawerContainer.appendChild(item);
+                    });
+                    
+                    // Add event listeners for mark as read buttons
+                    document.querySelectorAll('.mark-read-btn').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const notificationId = this.getAttribute('data-id');
+                            fetch(`/admin/api/notifications/${notificationId}/toggle-read`, { method: 'POST' })
+                                .then(() => {
+                                    loadNotifications();
+                                    updateNotificationCount();
+                                })
+                                .catch(error => console.error('Error:', error));
+                        });
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateNotificationCount();
+            
+            // Check for new notifications every 30 seconds
+            setInterval(updateNotificationCount, 30000);
+            
+            // Load notifications when dropdown is opened
+            const notificationsDropdown = document.getElementById('notificationsDropdown');
+            notificationsDropdown.addEventListener('click', loadNotifications);
+            
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+    
+    <!-- Additional scripts for specific pages -->
+    {% block scripts %}{% endblock %}
+</body>
+</html> 
