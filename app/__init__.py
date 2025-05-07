@@ -22,6 +22,9 @@ def create_app(config_name='development'):
     # Load configuration
     app.config.from_object(config[config_name])
     
+    # Set MongoDB URI from environment variable
+    app.config['MONGO_URI'] = os.environ.get('MONGODB_URI')
+    
     # Set debug mode based on environment
     app.config['DEBUG'] = config_name == 'development'
     
