@@ -1,10 +1,10 @@
 import sys
 import os
 
-# Add your project directory to the sys.path
-path = '/home/yourusername/public_html'
-if path not in sys.path:
-    sys.path.append(path)
+# Add the current directory to the sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
 
 # Set environment variables
 os.environ['FLASK_APP'] = 'app.py'
